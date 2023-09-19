@@ -1,33 +1,57 @@
-import discord
-import aiohttp #For making HTTP requests
+import discord # Эти две строки импортируют библиотеки discord.py и aiohttp, которые используются для создания бота и выполнения HTTP-запросов
+import aiohttp 
 
-intents = discord.Intents.all() #predefined list of all available intents
-client = discord.Client(intents=intents)
+intents = discord.Intents.all() # Здесь создается объект intents, который представляет собой набор разрешений (интентов), необходимых боту для взаимодействия с серверами Discord. discord.Intents.all() включает все доступные интенты.
+client = discord.Client(intents=intents) # Создается объект client, представляющий самого бота. Ему передаются интенты, которые были определены выше.
 
-@client.event #Event called the the bot is ready to interact with users
+# Это декоратор, который определяет событие "on_ready". Это событие вызывается, 
+когда бот успешно подключается к серверам Discord. В данном случае, оно просто 
+выводит в консоль информацию о том, как бот успешно авторизовался.
+
+@client.event 
 async def on_ready():
 print('We have logged in as {0.user}'.format(client))
 
-@client.event #Event that extracts infromation about the user and channel
+# Этот декоратор определяет событие "on_message", которое вызывается каждый раз, 
+когда сообщение отправляется на сервер Discord. В этой функции извлекается 
+информация о пользователе, сообщении и канале, в котором оно было отправлено, и выводится в консоль.
+
+@client.event 
 async def on_message(message):
 username = str(message.author).split('#')[0]
 user_message = str(message.content)
 channel = str(message.channel)
-print(f'{username}: {user_message} ({channel})') #basic information printed in the command line
+print(f'{username}: {user_message} ({channel})') 
 print('------')
 
-if message.author == client.user:
-return #Do nothing if message was sent by the bot itself
+# Этот блок проверяет, что сообщение не было отправлено самим ботом. 
+Если сообщение было отправлено ботом, то ничего не происходит (как бы выход из функции).
 
-if user_message.lower() == '!givejoke':
+if message.author == client.user:
+return 
+
+if user_message.lower() == '!givejoke': # Этот блок проверяет, если текст сообщения в нижнем регистре равен "!givejoke". Если это условие выполняется, бот выполняет дополнительные действия.
+
+# В этом блоке кода бот использует aiohttp для выполнения HTTP GET-запроса к API "icanhazdadjoke.com", 
+чтобы получить случайную шутку. Затем данные из ответа преобразуются в формат JSON и сохраняются в переменной data.
+
 async with aiohttp.ClientSession() as session:
 async with session.get('https://icanhazdadjoke.com/', headers={'Accept': 'application/json'}) as resp: #HTTP GET request to 'icanhazdadjoke' API for a random joke,
-data = await resp.json() #
-joke = data['joke'] #Stores the joke itself from the json file
-jokeid = data["id"] #Stores the specific joke ID from the json file
-print(f'joke id: {jokeid}')
-bot_joke = await message.channel.send(f"{message.author.mention} {joke}")
-await bot_joke.add_reaction("😂") #Creates reactions which the users can use to vote wheather the joke was funny or not
+data = await resp.json() 
+
+# Здесь из данных JSON извлекается текст шутки и её ID, которые затем используются.
+joke = data['joke'] 
+jokeid = data["id"] 
+
+
+print(f'joke id: {jokeid}') # ID шутки выводится в консоль.
+bot_joke = await message.channel.send(f"{message.author.mention} {joke}") # Бот отправляет сообщение с шуткой в тот же канал, где было отправлено исходное сообщение. message.author.mention используется для упоминания автора исходного сообщения.
+
+# Бот добавляет реакции "😂" и "🤢" к сообщению с шуткой, чтобы пользователи могли оценивать её смешность.
+await bot_joke.add_reaction("😂") 
 await bot_joke.add_reaction("🤢")
+
+# Здесь указывается токен бота, который вы должны заменить 
+на фактический токен вашего Discord-бота. Этот токен используется для авторизации бота на сервере Discord.
 TOKEN = 'YOUR_TOKEN'
 client.run(TOKEN)
